@@ -17,6 +17,7 @@ import hashlib
 import subprocess
 import psutil
 import platform
+import json
 from datetime import datetime, timedelta
 
 # Initialize logger
@@ -127,8 +128,8 @@ class TerryToolBot:
             return {
                 'email': self.contact_system.get_communication_settings('email'),
                 'paypal_configured': self.contact_system.payments_file.exists(),
-                'ticket_count': len(self.contact_system.get_open_tickets())
-            'contact_requests_today': len([c for c in self.contact_system._load_contacts() if c['created_at'].startswith(datetime.now().strftime('%Y-%m-%d'))])
+                'ticket_count': len(self.contact_system.get_open_tickets()),
+                'contact_requests_today': len([c for c in self.contact_system._load_contacts() if c['created_at'].startswith(datetime.now().strftime('%Y-%m-%d'))])
             }
         return {
             'email': 'kaynikko88@gmail.com',
@@ -233,7 +234,7 @@ class TerryToolBot:
             "qcse_enabled": True
         }
     
-        def _show_settings_display(self) -> str:
+    def _show_settings_display(self) -> str:
         """Show current settings in a popup"""
         settings = self.gui_settings.get_settings_summary()
         
