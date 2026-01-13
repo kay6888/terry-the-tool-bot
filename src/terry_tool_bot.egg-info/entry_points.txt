@@ -1,0 +1,3 @@
+[console_scripts]
+terry = main:main
+terry-gui = main:main_gui
