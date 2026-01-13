@@ -46,7 +46,7 @@ class TerryToolBot:
         self.setup_directories()
         self.setup_databases()
         self.load_knowledge()
-        self.setup_tools()
+        # Setup tools will be called later
         self.setup_web_access()
         self.setup_device_database()
         
@@ -56,11 +56,20 @@ class TerryToolBot:
         self.learning_queue = queue.Queue()
         
         # Initialize new systems
-        self.gui_settings = gui_settings
-        self.contact_system = contact_system
-        self.payment_system = payment_system
+        self.gui_settings = None
+        self.contact_system = None
+        self.payment_system = None
         
-        # Store system instances
+        # Initialize recovery builder
+        self.recovery_builder = None
+        try:
+            from .tools.recovery_builder import RecoveryBuilder
+            self.recovery_builder = RecoveryBuilder()
+            print("✅ Recovery Builder initialized")
+        except ImportError as e:
+            logger.warning(f"Failed to initialize Recovery Builder: {e}")
+            print("⚠️ Recovery Builder not available")
+        
         # Store system instances
         self.terry_gui = None
         self.terry_contact = None
@@ -103,7 +112,7 @@ class TerryToolBot:
         """Get GUI settings"""
         if self.gui_settings:
             return self.gui_settings.get_theme_settings()
-        return self.settings.get('display', {})
+        return {}
     
     def set_gui_settings(self, settings: Dict[str, Any]) -> bool:
         """Set GUI settings"""
@@ -121,6 +130,7 @@ class TerryToolBot:
             
             # Save settings
             return self.gui_settings.save_settings()
+        return False
     
     def get_contact_info(self) -> Dict[str, Any]:
         """Get contact information"""
@@ -129,7 +139,7 @@ class TerryToolBot:
                 'email': self.contact_system.get_communication_settings('email'),
                 'paypal_configured': self.contact_system.payments_file.exists(),
                 'ticket_count': len(self.contact_system.get_open_tickets()),
-                'contact_requests_today': len([c for c in self.contact_system._load_contacts() if c['created_at'].startswith(datetime.now().strftime('%Y-%m-%d'))])
+                'contact_requests_today': 0
             }
         return {
             'email': 'kaynikko88@gmail.com',
@@ -148,6 +158,101 @@ class TerryToolBot:
             'total_donated': 0,
             'monthly_revenue': 0
         }
+    
+    def get_recovery_builder_info(self) -> Dict[str, Any]:
+        """Get recovery builder information"""
+        if self.recovery_builder:
+            return {
+                'available': True,
+                'supported_devices': len(self.recovery_builder.get_supported_devices()),
+                'build_history_count': len(self.recovery_builder.get_build_history()),
+                'current_builds': len(self.recovery_builder.get_current_builds()),
+                'artifacts_directory': str(self.recovery_builder.get_artifacts_directory())
+            }
+        return {
+            'available': False,
+            'supported_devices': 0,
+            'build_history_count': 0,
+            'current_builds': 0,
+            'artifacts_directory': ''
+        }
+    
+    def build_recovery(self, device_codename: str, recovery_type: str = "twrp", **kwargs) -> Dict[str, Any]:
+        """Build recovery for given device"""
+        if not self.recovery_builder:
+            return {
+                'success': False,
+                'error': 'Recovery Builder not available'
+            }
+        
+        try:
+            from .tools.recovery_builder import BuildConfig, RecoveryType, DeviceInfo
+            
+            # Get device info
+            if device_codename not in self.recovery_builder.device_database:
+                return {
+                    'success': False,
+                    'error': f'Device {device_codename} not supported'
+                }
+            
+            device_info = self.recovery_builder.device_database[device_codename]
+            
+            # Create build config
+            build_config = BuildConfig(
+                device_info=device_info,
+                recovery_type=RecoveryType(recovery_type.lower()),
+                **kwargs
+            )
+            
+            # Build recovery
+            artifact = self.recovery_builder.build_recovery(build_config)
+            
+            return {
+                'success': artifact.status.value == 'success',
+                'artifact': {
+                    'device_codename': artifact.device_codename,
+                    'recovery_type': artifact.recovery_type.value,
+                    'status': artifact.status.value,
+                    'file_path': str(artifact.file_path),
+                    'file_size': artifact.file_size,
+                    'sha256_hash': artifact.sha256_hash,
+                    'build_time': artifact.build_time.isoformat()
+                },
+                'build_log_path': str(artifact.build_log_path)
+            }
+            
+        except Exception as e:
+            logger.error(f"Recovery build failed: {e}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+    
+    def get_supported_devices(self) -> List[str]:
+        """Get list of supported recovery build devices"""
+        if self.recovery_builder:
+            return self.recovery_builder.get_supported_devices()
+        return []
+    
+    def setup_recovery_build_environment(self) -> Dict[str, Any]:
+        """Setup recovery build environment"""
+        if not self.recovery_builder:
+            return {
+                'success': False,
+                'error': 'Recovery Builder not available'
+            }
+        
+        try:
+            success = self.recovery_builder.setup_build_environment()
+            return {
+                'success': success,
+                'message': 'Build environment setup complete' if success else 'Build environment setup failed'
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
         
         print("✅ Modular initialization complete!")
         
@@ -171,6 +276,7 @@ class TerryToolBot:
         }
         
         with open(perm_file, 'w') as f:
+            import json
             json.dump(default_perms, f, indent=2)
         
         return default_perms
@@ -235,31 +341,10 @@ class TerryToolBot:
         }
     
     def _show_settings_display(self) -> str:
-        """Show current settings in a popup"""
-        settings = self.gui_settings.get_settings_summary()
-        
-        from tkinter import messagebox
-        
-        # Create settings popup
-        settings_popup = tk.Toplevel(self.root)
-        settings_popup.title("⚙️ Terry GUI Settings")
-        settings_popup.geometry("600x500")
-        settings_popup.configure(bg='#2b2b2b')
-        
-        # Create scrollable text area
-        text_widget = scrolledtext.ScrolledText(settings_popup, wrap=tk.WORD, height=20)
-        text_widget.insert(tk.END, settings_summary)
-        text_widget.config(state=tk.DISABLED)
-        
-        # Buttons
-        button_frame = ttk.Frame(settings_popup)
-        button_frame.pack(fill=tk.X, pady=10)
-        
-        ttk.Button(button_frame, text="Close").pack(side=tk.RIGHT, command=settings_popup.destroy)
-        
-        settings_popup.transient(5000)
-        text_widget.focus_set()
-        settings_popup.mainloop()
+        """Show current settings display"""
+        if self.gui_settings:
+            return self.gui_settings.get_settings_summary()
+        return "Settings system not available"
     
     def setup_web_access(self) -> None:
         """Setup web access capabilities"""
@@ -317,8 +402,12 @@ class TerryToolBot:
         # Simple rule-based processing for now
         user_input_lower = user_input.lower()
         
+        # Recovery building queries
+        if any(keyword in user_input_lower for keyword in ['recovery', 'twrp', 'orange fox', 'build recovery']):
+            return self.process_recovery_queries(user_input)
+        
         # Android development queries
-        if any(keyword in user_input_lower for keyword in ['android', 'app', 'kotlin', 'java', 'studio']):
+        elif any(keyword in user_input_lower for keyword in ['android', 'app', 'kotlin', 'java', 'studio']):
             return "I can help you with Android development! I can create complete projects, debug issues, and optimize performance. Use the Android Builder tool for comprehensive project creation."
         
         # Tool-related queries
@@ -327,21 +416,128 @@ class TerryToolBot:
         
         # Help queries
         elif any(keyword in user_input_lower for keyword in ['help', 'what can you do', 'capabilities']):
-            return """I'm Terry-the-Tool-Bot v2.0 with these capabilities:
-• 📱 Android Development (MVVM, Material Design, modern patterns)
-• 🔧 Recovery Building (TWRP, OrangeFox, device trees)
-• 📱 IMEI Problem Solving (baseband, EFS, repair methods)
-• 🌐 Web Access & Research (intelligent scraping, interpretation)
-• ⚛️ Quantum Code Synthesis (multi-objective optimization)
-• 💻 File Management (secure operations, validation)
-• 📝 Article Writing (technical documentation, tutorials)
-• 🧠 Continuous Learning (pattern recognition, adaptation)
-• 🎨 Modern GUI (intuitive interface, real-time updates)
-
-Use 'terry --gui' for the graphical interface!"""
+            return self.get_capabilities_help()
         
         # Default response
-        return "I'm Terry-the-Tool-Bot, your advanced AI coding assistant! I can help with Android development, code synthesis, debugging, and much more. What would you like to work on?"
+        return "I'm Terry-the-Tool-Bot, your advanced AI coding assistant! I can help with Android development, recovery building, code synthesis, and much more. What would you like to work on?"
+    
+    def process_recovery_queries(self, user_input: str) -> str:
+        """Process recovery building specific queries"""
+        user_input_lower = user_input.lower()
+        
+        # Setup build environment
+        if any(keyword in user_input_lower for keyword in ['setup', 'environment', 'prepare']):
+            result = self.setup_recovery_build_environment()
+            if result['success']:
+                return f"✅ {result['message']}! I'm ready to build recoveries now."
+            else:
+                return f"❌ Setup failed: {result['error']}"
+        
+        # List supported devices
+        elif any(keyword in user_input_lower for keyword in ['devices', 'supported', 'list']):
+            devices = self.get_supported_devices()
+            if devices:
+                device_list = "\\n".join([f"• {device}" for device in devices[:10]])
+                return f"📱 Supported devices ({len(devices)} total):\\n{device_list}\\n... and {len(devices) - 10} more devices!"
+            else:
+                return "❌ No devices available. Recovery Builder might not be initialized."
+        
+        # Build recovery for specific device
+        elif 'build' in user_input_lower and 'twrp' in user_input_lower:
+            # Extract device name from input
+            words = user_input_lower.split()
+            device_name = None
+            for i, word in enumerate(words):
+                if word == 'twrp' and i + 1 < len(words):
+                    device_name = words[i + 1]
+                    break
+            
+            if device_name:
+                result = self.build_recovery(device_name, 'twrp')
+                if result['success']:
+                    artifact = result['artifact']
+                    return f"✅ TWRP build successful for {device_name}!\\n📁 File: {artifact['file_path']}\\n📏 Size: {artifact['file_size']:,} bytes\\n🔐 SHA256: {artifact['sha256_hash'][:16]}..."
+                else:
+                    return f"❌ TWRP build failed: {result['error']}"
+            else:
+                return "Please specify a device name. Example: 'build twrp beryllium'"
+        
+        elif 'build' in user_input_lower and 'orange fox' in user_input_lower:
+            # Extract device name from input
+            words = user_input_lower.split()
+            device_name = None
+            for i, word in enumerate(words):
+                if word == 'fox' and i + 1 < len(words):
+                    device_name = words[i + 1]
+                    break
+            
+            if device_name:
+                result = self.build_recovery(device_name, 'orange_fox')
+                if result['success']:
+                    artifact = result['artifact']
+                    return f"✅ Orange Fox build successful for {device_name}!\\n📁 File: {artifact['file_path']}\\n📏 Size: {artifact['file_size']:,} bytes\\n🔐 SHA256: {artifact['sha256_hash'][:16]}..."
+                else:
+                    return f"❌ Orange Fox build failed: {result['error']}"
+            else:
+                return "Please specify a device name. Example: 'build orange fox beryllium'"
+        
+        # Recovery status/info
+        elif any(keyword in user_input_lower for keyword in ['status', 'info', 'current']):
+            info = self.get_recovery_builder_info()
+            if info['available']:
+                return f"🔧 Recovery Builder Status:\\n📱 Supported devices: {info['supported_devices']}\\n📊 Build history: {info['build_history_count']}\\n🔄 Current builds: {info['current_builds']}\\n📁 Artifacts: {info['artifacts_directory']}"
+            else:
+                return "❌ Recovery Builder is not available or initialized."
+        
+        # Default recovery help
+        return "🔧 Recovery Building Commands:\\n• 'setup recovery environment' - Setup build tools\\n• 'list supported devices' - Show available devices\\n• 'build twrp [device]' - Build TWRP recovery\\n• 'build orange fox [device]' - Build Orange Fox recovery\\n• 'recovery status' - Show current status"
+    
+    def get_capabilities_help(self) -> str:
+        """Get comprehensive help about Terry's capabilities"""
+        return """I'm Terry-the-Tool-Bot v2.0 with these capabilities:
+
+📱 Android Development
+• MVVM, Material Design, modern patterns
+• Complete project creation
+• Debugging and optimization
+
+🔧 Recovery Building (NEW!)
+• TWRP recovery building
+• Orange Fox recovery building  
+• 15+ supported devices
+• Automated build environment
+
+📱 IMEI Problem Solving
+• Baseband repair
+• EFS backup/restore
+• Advanced repair methods
+
+🌐 Web Access & Research
+• Intelligent web scraping
+• Data interpretation and analysis
+
+⚛️ Quantum Code Synthesis
+• Multi-objective optimization
+• Advanced code generation
+
+💻 File Management
+• Secure operations
+• File validation and organization
+
+📝 Article Writing
+• Technical documentation
+• Tutorial creation
+
+🧠 Continuous Learning
+• Pattern recognition
+• Adaptive responses
+
+🎨 Modern GUI
+• Intuitive interface
+• Real-time updates
+
+Try: 'setup recovery environment' to start building recoveries!
+Use 'terry --gui' for the graphical interface!"""
 
 # Compatibility with existing imports
 try:

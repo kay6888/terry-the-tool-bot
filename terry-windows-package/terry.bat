@@ -1,0 +1,1 @@
+@echo off\necho 🚀 Starting Terry-the-Tool-Bot...\ncd /d "%~dp0"\npython terry_minimal.py %*\npause\n

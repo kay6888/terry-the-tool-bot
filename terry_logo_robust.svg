@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <!-- Robotic gradients (less purple, more industrial) -->
+    <defs>
+        <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#374151;stop-opacity:1" />
+            <stop offset="50%" style="stop-color:#1f2937;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#111827;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="headGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#4b5563;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#1f2937;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#6b7280;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#374151;stop-opacity:1" />
+        </linearGradient>
+        <radialGradient id="eyeGrad">
+            <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#dc2626;stop-opacity:0.8" />
+        </radialGradient>
+        <linearGradient id="beltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#ea580c;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#c2410c;stop-opacity:1" />
+        </linearGradient>
+        <filter id="robotShadow">
+            <feDropShadow dx="3" dy="3" stdDeviation="4" flood-opacity="0.4"/>
+        </filter>
+        <filter id="glowRed">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+    </defs>
+    
+    <!-- Ground shadow -->
+    <ellipse cx="100" cy="195" rx="50" ry="10" fill="#000000" opacity="0.3"/>
+    
+    <!-- Robust Robot Body (more industrial) -->
+    <rect x="60" y="90" width="80" height="80" rx="10" fill="url(#bodyGrad)" stroke="#000000" stroke-width="3" filter="url(#robotShadow)"/>
+    
+    <!-- Body panels and details -->
+    <rect x="70" y="100" width="60" height="25" rx="5" fill="#374151" opacity="0.5"/>
+    <rect x="75" y="130" width="50" height="3" fill="#6b7280"/>
+    
+    <!-- Ventilation grilles -->
+    <g opacity="0.7">
+        <rect x="65" y="105" width="2" height="15" fill="#111827"/>
+        <rect x="133" y="105" width="2" height="15" fill="#111827"/>
+        <rect x="65" y="125" width="2" height="15" fill="#111827"/>
+        <rect x="133" y="125" width="2" height="15" fill="#111827"/>
+    </g>
+    
+    <!-- Industrial Tool Belt -->
+    <rect x="55" y="125" width="90" height="18" rx="5" fill="url(#beltGrad)" stroke="#000000" stroke-width="2" filter="url(#robotShadow)"/>
+    
+    <!-- Belt rivets -->
+    <circle cx="70" cy="134" r="2" fill="#000000"/>
+    <circle cx="100" cy="134" r="2" fill="#000000"/>
+    <circle cx="130" cy="134" r="2" fill="#000000"/>
+    
+    <!-- Heavy-duty Tools -->
+    <!-- Industrial Wrench -->
+    <g transform="translate(65, 123)" filter="url(#robotShadow)">
+        <rect x="0" y="0" width="6" height="12" rx="1" fill="url(#metalGrad)" stroke="#000000" stroke-width="1"/>
+        <circle cx="3" cy="14" r="4" fill="#000000"/>
+        <rect x="1" y="-2" width="4" height="3" fill="#6b7280"/>
+    </g>
+    
+    <!-- Power Drill -->
+    <g transform="translate(90, 123)" filter="url(#robotShadow)">
+        <rect x="0" y="0" width="4" height="10" rx="1" fill="url(#metalGrad)" stroke="#000000" stroke-width="1"/>
+        <rect x="-2" y="10" width="8" height="3" rx="1" fill="#ea580c"/>
+        <circle cx="2" cy="-1" r="2" fill="#ef4444" filter="url(#glowRed)"/>
+    </g>
+    
+    <!-- Steel Hammer -->
+    <g transform="translate(115, 123)" filter="url(#robotShadow)">
+        <rect x="0" y="0" width="5" height="8" rx="1" fill="#6b7280" stroke="#000000" stroke-width="1"/>
+        <rect x="-3" y="8" width="11" height="4" rx="1" fill="#374151"/>
+        <rect x="0" y="12" width="5" height="2" fill="#374151"/>
+    </g>
+    
+    <!-- Robust Robot Head (more industrial) -->
+    <rect x="70" y="50" width="60" height="45" rx="8" fill="url(#headGrad)" stroke="#000000" stroke-width="3" filter="url(#robotShadow)"/>
+    
+    <!-- Head armor plates -->
+    <rect x="75" y="55" width="50" height="20" rx="5" fill="#4b5563" opacity="0.6"/>
+    <rect x="85" y="60" width="30" height="10" rx="3" fill="#374151" opacity="0.4"/>
+    
+    <!-- Industrial Robot Eyes (more menacing) -->
+    <!-- Left eye -->
+    <rect x="78" y="60" width="16" height="12" rx="2" fill="#000000"/>
+    <rect x="80" y="62" width="12" height="8" fill="url(#eyeGrad)" filter="url(#glowRed)"/>
+    <rect x="85" y="64" width="2" height="4" fill="#000000"/>
+    <rect x="82" y="66" width="8" height="1" fill="#ef4444" opacity="0.6"/>
+    
+    <!-- Right eye -->
+    <rect x="106" y="60" width="16" height="12" rx="2" fill="#000000"/>
+    <rect x="108" y="62" width="12" height="8" fill="url(#eyeGrad)" filter="url(#glowRed)"/>
+    <rect x="113" y="64" width="2" height="4" fill="#000000"/>
+    <rect x="110" y="66" width="8" height="1" fill="#ef4444" opacity="0.6"/>
+    
+    <!-- Robotic mouth (more industrial) -->
+    <rect x="85" y="78" width="30" height="8" rx="4" fill="#000000"/>
+    <rect x="87" y="80" width="26" height="4" rx="2" fill="#ef4444" opacity="0.8"/>
+    
+    <!-- Red status light on mouth -->
+    <circle cx="100" cy="82" r="1.5" fill="#ef4444" filter="url(#glowRed)"/>
+    
+    <!-- Heavy-duty Left Arm -->
+    <rect x="35" y="100" width="25" height="16" rx="8" fill="url(#bodyGrad)" stroke="#000000" stroke-width="3" filter="url(#robotShadow)"/>
+    <!-- Arm joints -->
+    <rect x="60" y="105" width="5" height="6" rx="2" fill="#6b7280"/>
+    <circle cx="62" cy="108" r="2" fill="#000000"/>
+    
+    <!-- Heavy-duty Right Arm with Strong Thumbs Up -->
+    <g transform="translate(140, 100)" filter="url(#robotShadow)">
+        <!-- Upper arm -->
+        <rect x="0" y="0" width="25" height="16" rx="8" fill="url(#bodyGrad)" stroke="#000000" stroke-width="3"/>
+        <!-- Arm joints -->
+        <rect x="25" y="5" width="5" height="6" rx="2" fill="#6b7280"/>
+        <circle cx="27" cy="8" r="2" fill="#000000"/>
+        
+        <!-- Robotic Hand (more detailed) -->
+        <ellipse cx="35" cy="8" rx="12" ry="15" fill="#4b5563" stroke="#000000" stroke-width="3"/>
+        <!-- Hand details -->
+        <rect x="30" y="5" width="10" height="6" rx="3" fill="#374151" opacity="0.5"/>
+        <circle cx="32" cy="8" r="2" fill="#6b7280"/>
+        
+        <!-- Industrial Thumbs Up! -->
+        <g transform="translate(45, 0) rotate(-30 0 0)">
+            <ellipse cx="0" cy="-5" rx="8" ry="12" fill="#4b5563" stroke="#000000" stroke-width="3"/>
+            <!-- Thumb armor plates -->
+            <rect x="-2" y="-8" width="4" height="8" rx="2" fill="#374151" opacity="0.7"/>
+            <!-- Thumb joint -->
+            <circle cx="0" cy="-5" r="2" fill="#6b7280" stroke="#000000" stroke-width="1"/>
+            <!-- Thumb tip highlight -->
+            <ellipse cx="2" cy="-12" rx="3" ry="4" fill="#ea580c"/>
+            
+            <!-- Industrial highlight on thumb -->
+            <ellipse cx="-1" cy="-7" rx="3" ry="5" fill="#6b7280" opacity="0.4"/>
+        </g>
+    </g>
+    
+    <!-- Industrial Antenna Array -->
+    <line x1="100" y1="50" x2="100" y2="35" stroke="#000000" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="100" cy="50" r="4" fill="#6b7280" stroke="#000000" stroke-width="2"/>
+    
+    <!-- Dual antenna lights -->
+    <g filter="url(#glowRed)">
+        <circle cx="100" cy="33" r="5" fill="#ef4444"/>
+        <circle cx="100" cy="33" r="3" fill="#dc2626"/>
+        <circle cx="100" cy="33" r="1.5" fill="#ffffff"/>
+        
+        <!-- Secondary antenna light -->
+        <circle cx="110" cy="38" r="2" fill="#ea580c"/>
+    </g>
+    
+    <!-- Signal waves -->
+    <circle cx="100" cy="33" r="12" fill="none" stroke="#ef4444" stroke-width="1" opacity="0.4"/>
+    <circle cx="100" cy="33" r="18" fill="none" stroke="#ef4444" stroke-width="1" opacity="0.2"/>
+    
+    <!-- Heavy-duty Robot Legs -->
+    <rect x="75" y="170" width="20" height="30" rx="10" fill="url(#bodyGrad)" stroke="#000000" stroke-width="3" filter="url(#robotShadow)"/>
+    <rect x="105" y="170" width="20" height="30" rx="10" fill="url(#bodyGrad)" stroke="#000000" stroke-width="3" filter="url(#robotShadow)"/>
+    
+    <!-- Leg armor and joints -->
+    <rect x="80" y="180" width="10" height="15" rx="3" fill="#6b7280"/>
+    <rect x="110" y="180" width="10" height="15" rx="3" fill="#6b7280"/>
+    <circle cx="85" cy="185" r="2" fill="#000000"/>
+    <circle cx="115" cy="185" r="2" fill="#000000"/>
+    
+    <!-- Industrial Robot Feet -->
+    <g filter="url(#robotShadow)">
+        <rect x="70" y="195" width="30" height="8" rx="4" fill="#1f2937" stroke="#000000" stroke-width="2"/>
+        <rect x="100" y="195" width="30" height="8" rx="4" fill="#1f2937" stroke="#000000" stroke-width="2"/>
+        <!-- Foot treads -->
+        <rect x="72" y="198" width="26" height="2" fill="#000000"/>
+        <rect x="102" y="198" width="26" height="2" fill="#000000"/>
+    </g>
+</svg>

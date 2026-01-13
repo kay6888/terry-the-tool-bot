@@ -1,0 +1,1 @@
+#!/bin/bash\necho "🚀 Starting Terry-the-Tool-Bot..."\ncd "$(dirname "$0")"\npython3 terry_minimal.py "$@"\n

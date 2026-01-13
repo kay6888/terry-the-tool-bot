@@ -1,0 +1,1 @@
+@echo off\necho 🚀 Starting Terry-the-Tool-Bot Complete...\ncd /d "%~dp0"\npython terry_gui_ultra.py\npause\n

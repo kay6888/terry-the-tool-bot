@@ -514,7 +514,7 @@ class VirtualTestingEnvironment:
             'conditionals': len(re.findall(r'\b(if|else|switch|case)\b', code, re.IGNORECASE)),
             'functions': len(re.findall(r'\b(def|function|class)\b', code, re.IGNORECASE)),
             'operators': len(re.findall(r'[+\-*/%&|^<>!]', code)),
-            'nesting': code.count('    ') // Approximate nesting level
+            'nesting': code.count('    ')  # Approximate nesting level
         }
         
         # Calculate complexity score

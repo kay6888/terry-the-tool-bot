@@ -1,0 +1,1 @@
+#!/bin/bash\necho "🚀 Starting Terry-the-Tool-Bot Ultra..."\ncd "$(dirname "$0")"\npython3 terry_gui_ultra.py\n
