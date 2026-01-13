@@ -1,4 +1,20 @@
+#!/usr/bin/env python3
+"""
+Terry-the-Tool-Bot GUI - Advanced AI Coding Assistant
 
+Modern interface with recovery building, device management, and download capabilities.
+"""
+
+import webbrowser
+import os
+import json
+from pathlib import Path
+from datetime import datetime
+
+def create_terry_gui():
+    """Create Terry-the-Tool-Bot GUI"""
+    
+    html_content = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -758,10 +774,10 @@
                 if (hasTWRP || hasOrangeFox) {
                     downloadButtons = '<div class="download-buttons">';
                     if (hasTWRP) {
-                        downloadButtons += '<button class="download-small-btn" onclick="downloadRecovery('twrp', '' + codename + '')">📥 TWRP</button>';
+                        downloadButtons += '<button class="download-small-btn" onclick="downloadRecovery(\'twrp\', \'' + codename + '\')">📥 TWRP</button>';
                     }
                     if (hasOrangeFox) {
-                        downloadButtons += '<button class="download-small-btn" onclick="downloadRecovery('orange_fox', '' + codename + '')">📥 OF</button>';
+                        downloadButtons += '<button class="download-small-btn" onclick="downloadRecovery(\'orange_fox\', \'' + codename + '\')">📥 OF</button>';
                     }
                     downloadButtons += '</div>';
                 }
@@ -1028,4 +1044,34 @@
     </script>
 </body>
 </html>
+    """
     
+    # Create HTML file
+    html_file = Path(__file__).parent / "terry_gui.html"
+    with open(html_file, 'w') as f:
+        f.write(html_content)
+    
+    return html_file
+
+def main():
+    """Main function"""
+    print("🚀 Creating Terry-the-Tool-Bot GUI...")
+    
+    # Create Terry GUI
+    html_file = create_terry_gui()
+    print(f"✅ Created Terry GUI: {html_file}")
+    
+    # Open in browser
+    file_url = f"file://{html_file.absolute()}"
+    print(f"🌐 Opening in browser: {file_url}")
+    
+    try:
+        webbrowser.open(file_url)
+        print("✅ Terry-the-Tool-Bot GUI is now running!")
+        print("🤖 Advanced AI Coding Assistant ready!")
+    except Exception as e:
+        print(f"❌ Could not open browser: {e}")
+        print(f"📂 Please open this file manually: {html_file}")
+
+if __name__ == "__main__":
+    main()

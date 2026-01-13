@@ -123,26 +123,73 @@ class RecoveryBuilder:
             "begonia": DeviceInfo("begonia", "Xiaomi", "Redmi Note 8 Pro", "arm64", "mt6768", "10"),
             "sweet": DeviceInfo("sweet", "Xiaomi", "Redmi Note 10 Pro", "arm64", "sdm732g", "11"),
             "lmi": DeviceInfo("lmi", "Xiaomi", "POCO F2 Pro", "arm64", "sdm865", "11"),
+            "alioth": DeviceInfo("alioth", "Xiaomi", "Mi 11", "arm64", "sdm888", "12"),
+            "surya": DeviceInfo("surya", "Xiaomi", "Mi 11 Lite", "arm64", "sdm780g", "12"),
+            "diting": DeviceInfo("diting", "Xiaomi", "Redmi K30 Pro", "arm64", "sdm768g", "11"),
+            "lime": DeviceInfo("lime", "Xiaomi", "Redmi Note 9 Pro", "arm64", "sm7125", "12"),
+            "lemon": DeviceInfo("lemon", "Xiaomi", "Redmi Note 9", "arm64", "sm7150", "11"),
+            "citrus": DeviceInfo("citrus", "Xiaomi", "Redmi Note 10", "arm64", "sm7150", "11"),
             
             # Samsung Devices
             "star2lte": DeviceInfo("star2lte", "Samsung", "S9+", "arm64", "exynos9810", "10"),
             "beyond2lte": DeviceInfo("beyond2lte", "Samsung", "S10+", "arm64", "exynos9820", "11"),
+            "y2q": DeviceInfo("y2q", "Samsung", "S20", "arm64", "exynos990", "11"),
+            "x1q": DeviceInfo("x1q", "Samsung", "S21", "arm64", "exynos2100", "12"),
+            "a52sxq": DeviceInfo("a52sxq", "Samsung", "A52s 5G", "arm64", "sdm750g", "12"),
             
             # OnePlus Devices
             "guacamole": DeviceInfo("guacamole", "OnePlus", "7 Pro", "arm64", "sdm855", "11"),
             "hotdog": DeviceInfo("hotdog", "OnePlus", "7T Pro", "arm64", "sdm855+", "11"),
+            "instantnoodle": DeviceInfo("instantnoodle", "OnePlus", "8 Pro", "arm64", "sdm888", "11"),
+            "hotdogb": DeviceInfo("hotdogb", "OnePlus", "7T", "arm64", "sdm855", "11"),
+            "billie": DeviceInfo("billie", "OnePlus", "Nord", "arm64", "sdm750g", "11"),
             
             # Google Devices
             "sunfish": DeviceInfo("sunfish", "Google", "Pixel 4a", "arm64", "sdm765g", "12"),
             "redfin": DeviceInfo("redfin", "Google", "Pixel 5", "arm64", "sdm765g", "12"),
             "bluejay": DeviceInfo("bluejay", "Google", "Pixel 6a", "arm64", "gs101", "13"),
+            "raven": DeviceInfo("raven", "Google", "Pixel 6 Pro", "arm64", "gs101", "13"),
+            "oriole": DeviceInfo("oriole", "Google", "Pixel 6", "arm64", "gs101", "13"),
+            "barbet": DeviceInfo("barbet", "Google", "Pixel 4a 5G", "arm64", "sdm765g", "12"),
             
             # ASUS Devices  
             "I01WD": DeviceInfo("I01WD", "ASUS", "ROG Phone 3", "arm64", "sdm865+", "11"),
+            "AI2205": DeviceInfo("AI2205", "ASUS", "ROG Phone 5", "arm64", "sdm888", "12"),
+            "I006D": DeviceInfo("I006D", "ASUS", "Zenfone 8", "arm64", "sdm845", "11"),
             
             # Realme Devices
             "RMX2061": DeviceInfo("RMX2061", "Realme", "6 Pro", "arm64", "sdm720g", "11"),
-            "RMX1971": DeviceInfo("RMX1971", "Realme", "5 Pro", "arm64", "sdm712", "10")
+            "RMX1971": DeviceInfo("RMX1971", "Realme", "5 Pro", "arm64", "sdm712", "10"),
+            "RMX2001": DeviceInfo("RMX2001", "Realme", "7 Pro", "arm64", "sdm865", "11"),
+            "RMX2151": DeviceInfo("RMX2151", "Realme", "8 Pro", "arm64", "mt6889z", "11"),
+            "RMX3363": DeviceInfo("RMX3363", "Realme", "GT 5G", "arm64", "mt6893", "12"),
+            
+            # Motorola Devices
+            "hanoip": DeviceInfo("hanoip", "Motorola", "Edge 20", "arm64", "sdm765g", "11"),
+            "rhodep": DeviceInfo("rhodep", "Motorola", "Edge 30", "arm64", "mt6893", "12"),
+            
+            # Oppo Devices
+            "OP4F5L1": DeviceInfo("OP4F5L1", "Oppo", "Reno5 5G", "arm64", "sdm765g", "11"),
+            "OP4F1BL": DeviceInfo("OP4F1BL", "Oppo", "Reno6 5G", "arm64", "mt6893", "12"),
+            
+            # Vivo Devices
+            "V2027": DeviceInfo("V2027", "Vivo", "X60 Pro", "arm64", "mt6893", "11"),
+            "V2121": DeviceInfo("V2121", "Vivo", "X70 Pro", "arm64", "mt6877", "12"),
+            
+            # Nothing Devices
+            "Spacewar": DeviceInfo("Spacewar", "Nothing", "Phone (2)", "arm64", "sdm765g", "12"),
+            "Spacefish": DeviceInfo("Spacefish", "Nothing", "Phone (1)", "arm64", "sdm765g", "12"),
+            
+            # Fairphone Devices
+            "FP4": DeviceInfo("FP4", "Fairphone", "Fairphone 4", "arm64", "sdm765g", "12"),
+            
+            # Sony Devices
+            "PDX203": DeviceInfo("PDX203", "Sony", "Xperia 10 III", "arm64", "sm6375", "12"),
+            "XQ-BC72": DeviceInfo("XQ-BC72", "Sony", "Xperia 1 III", "arm64", "sdm888", "12"),
+            
+            # Nokia Devices
+            "Salem": DeviceInfo("Salem", "Nokia", "G50 5G", "arm64", "sdm750g", "12"),
+            "Deadpool": DeviceInfo("Deadpool", "Nokia", "X20 5G", "arm64", "sdm750g", "12")
         }
         
         device_db_file = self.workspace_dir / "device_database.json"

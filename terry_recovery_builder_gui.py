@@ -20,7 +20,7 @@ def create_recovery_builder_gui():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terry Recovery Builder | Expert Recovery Building System</title>
+    <title>Terry-the-Tool-Bot | Advanced AI Coding Assistant</title>
     <link rel="icon" type="image/svg+xml" href="terry_logo_working.svg">
     <style>
         * {
@@ -132,19 +132,40 @@ def create_recovery_builder_gui():
 
         .device-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px;
             margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .device-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .device-grid::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .device-grid::-webkit-scrollbar-thumb {
+            background: rgba(96, 165, 250, 0.3);
+            border-radius: 3px;
         }
 
         .device-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 15px;
+            border-radius: 8px;
+            padding: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
+            font-size: 0.85em;
         }
 
         .device-card:hover {
@@ -161,12 +182,14 @@ def create_recovery_builder_gui():
         .device-name {
             font-weight: 600;
             color: #60a5fa;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
+            font-size: 0.9em;
         }
 
         .device-info {
-            font-size: 0.9em;
+            font-size: 0.75em;
             color: rgba(255, 255, 255, 0.7);
+            line-height: 1.2;
         }
 
         .build-options {
@@ -457,6 +480,73 @@ def create_recovery_builder_gui():
             border-color: rgba(239, 68, 68, 0.3);
         }
 
+        .floating-donate {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1001;
+            transition: all 0.3s ease;
+        }
+
+        .donate-content {
+            background: linear-gradient(135deg, #ef4444, #f5576c);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .donate-content:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(239, 68, 68, 0.4);
+        }
+
+        .download-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .download-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:not(.secondary) {
+            background: linear-gradient(135deg, #374151, #1f2937);
+            color: white;
+        }
+
+        .download-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        #downloadInfo {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
         @media (max-width: 768px) {
             .main-content {
                 grid-template-columns: 1fr;
@@ -480,8 +570,8 @@ def create_recovery_builder_gui():
                     <img src="terry_logo_working.svg" alt="Terry Logo" />
                 </div>
                 <div class="logo-text">
-                    <h1>Recovery Builder</h1>
-                    <div class="subtitle">Expert TWRP & Orange Fox Recovery Building System</div>
+                    <h1>Terry-the-Tool-Bot</h1>
+                    <div class="subtitle">Advanced AI Coding Assistant v2.0</div>
                 </div>
             </div>
         </div>
@@ -644,7 +734,28 @@ def create_recovery_builder_gui():
         </div>
     </div>
 
-    <div class="notification" id="notification"></div>
+        <div class="notification" id="notification"></div>
+        
+        <!-- Floating Donate Button -->
+        <div class="floating-donate" id="floatingDonate">
+            <div class="donate-content" onclick="openDonate()">
+                <span>❤️</span>
+                <span>Support Terry</span>
+            </div>
+        </div>
+        
+        <!-- Download Modal -->
+        <div id="downloadModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeDownload()">&times;</span>
+                <h2>📦 Download Recovery File</h2>
+                <div id="downloadInfo"></div>
+                <div class="download-actions">
+                    <button class="download-btn" onclick="downloadFile()">📥 Download</button>
+                    <button class="download-btn secondary" onclick="copyLink()">📋 Copy Link</button>
+                </div>
+            </div>
+        </div>
 
     <script>
         // Device database
@@ -957,6 +1068,187 @@ def create_recovery_builder_gui():
                 localStorage.setItem('successfulBuilds', successfulBuilds);
             }
         });
+
+        // Follow scroll with donate button
+        let lastScrollTop = 0;
+        window.addEventListener('scroll', function() {
+            const donateButton = document.getElementById('floatingDonate');
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            if (scrollTop > lastScrollTop) {
+                // Scrolling down
+                donateButton.style.bottom = '20px';
+            } else {
+                // Scrolling up
+                donateButton.style.bottom = (20 + (lastScrollTop - scrollTop)) + 'px';
+            }
+            
+            lastScrollTop = scrollTop;
+        });
+
+        // Download functionality
+        let currentDownloadFile = null;
+
+        function openDownload(recoveryType, deviceCodename, fileName, fileSize, sha256) {
+            currentDownloadFile = {
+                type: recoveryType,
+                device: deviceCodename,
+                name: fileName,
+                size: fileSize,
+                sha256: sha256
+            };
+
+            const downloadInfo = document.getElementById('downloadInfo');
+            downloadInfo.innerHTML = `
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 10px;">
+                    <div><strong>Device:</strong> ${deviceCodename}</div>
+                    <div><strong>Type:</strong> ${recoveryType}</div>
+                    <div><strong>File:</strong> ${fileName}</div>
+                    <div><strong>Size:</strong> ${fileSize}</div>
+                    <div><strong>SHA256:</strong> ${sha256}</div>
+                </div>
+            `;
+
+            document.getElementById('downloadModal').style.display = 'block';
+        }
+
+        function closeDownload() {
+            document.getElementById('downloadModal').style.display = 'none';
+            currentDownloadFile = null;
+        }
+
+        function downloadFile() {
+            if (currentDownloadFile) {
+                // Create demo download
+                const downloadUrl = `data:application/octet-stream;base64,UkVDTw==`; // Demo content
+                
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = currentDownloadFile.name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                showNotification(`Downloaded ${currentDownloadFile.name}`, 'success');
+                closeDownload();
+            }
+        }
+
+        function copyLink() {
+            if (currentDownloadFile) {
+                // Copy demo link to clipboard
+                const demoLink = `https://terry-bot.example/downloads/${currentDownloadFile.name}`;
+                navigator.clipboard.writeText(demoLink).then(() => {
+                    showNotification('Download link copied to clipboard!', 'success');
+                });
+            }
+        }
+
+        // Add download buttons to device cards
+        function addDownloadButtons() {
+            const deviceCards = document.querySelectorAll('.device-card');
+            deviceCards.forEach(card => {
+                const deviceCodename = card.dataset.device;
+                
+                // Check if device has built recoveries
+                const twrpExists = Math.random() > 0.7; // Simulate existing builds
+                const orangeFoxExists = Math.random() > 0.8;
+                
+                if (twrpExists || orangeFoxExists) {
+                    const downloadDiv = document.createElement('div');
+                    downloadDiv.className = 'download-buttons';
+                    downloadDiv.style.marginTop = '10px';
+                    downloadDiv.style.display = 'flex';
+                    downloadDiv.style.gap = '5px';
+                    
+                    if (twrpExists) {
+                        const twrpBtn = document.createElement('button');
+                        twrpBtn.className = 'download-small-btn';
+                        twrpBtn.innerHTML = '📥 TWRP';
+                        twrpBtn.onclick = () => openDownload('TWRP', deviceCodename, `twrp_${deviceCodename}_20240113_103045.img`, '45.2 MB', 'a1b2c3d4e5f6...');
+                        downloadDiv.appendChild(twrpBtn);
+                    }
+                    
+                    if (orangeFoxExists) {
+                        const ofBtn = document.createElement('button');
+                        ofBtn.className = 'download-small-btn';
+                        ofBtn.innerHTML = '📥 Orange Fox';
+                        ofBtn.onclick = () => openDownload('Orange Fox', deviceCodename, `orange_fox_${deviceCodename}_20240113_103045.img`, '38.7 MB', 'f6e5d4c3b2a1...');
+                        downloadDiv.appendChild(ofBtn);
+                    }
+                    
+                    card.appendChild(downloadDiv);
+                }
+            });
+        }
+
+        // Enhanced donate modal
+        function openDonate() {
+            // Create enhanced donate modal if not exists
+            let donateModal = document.getElementById('donateModal');
+            if (!donateModal) {
+                donateModal = document.createElement('div');
+                donateModal.id = 'donateModal';
+                donateModal.className = 'modal';
+                donateModal.innerHTML = `
+                    <div class="modal-content">
+                        <span class="close" onclick="closeDonate()">&times;</span>
+                        <h2 style="background: linear-gradient(135deg, #60a5fa, #3b82f6, #2563eb); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">❤️ Support Terry's Development</h2>
+                        <p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 30px;">
+                            Your support helps me continue developing cutting-edge AI features and keep Terry free for everyone!
+                        </p>
+                        
+                        <div style="margin: 30px 0;">
+                            <div style="background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(36, 123, 160, 0.2)); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 15px; padding: 25px; margin-bottom: 20px;">
+                                <strong style="color: #60a5fa; font-size: 1.4em;">👤 Support Terry</strong><br>
+                                <code style="color: #dbeafe; background: rgba(96, 165, 250, 0.1); padding: 8px 16px; border-radius: 8px;">kaynikko88@gmail.com</code><br>
+                                <small>• Every contribution helps improve AI capabilities</small>
+                            </div>
+                            
+                            <div style="background: linear-gradient(135deg, rgba(36, 123, 160, 0.2), rgba(36, 123, 160, 0.3)); border:1px solid rgba(36, 123, 160, 0.3); border-radius: 15px; padding: 25px; margin-bottom: 20px;">
+                                <strong style="color: #60a5fa; font-size: 1.4em;">🚀 Premium Support</strong><br>
+                                <code style="color: #dbeafe; background: rgba(36, 123, 160, 0.1); padding: 8px 16px; border-radius: 8px;">kaynikko88@gmail.com</code><br>
+                                <small>• Priority support & feature requests</small>
+                            </div>
+                            
+                            <div style="background: linear-gradient(135deg, rgba(147, 51, 234, 0.1), rgba(147, 51, 234, 0.3)); border: 1px solid rgba(147, 51, 234, 0.3); border-radius: 15px; padding: 25px;">
+                                <strong style="color: #60a5fa; font-size: 1.4em;">🏆 Elite Support</strong><br>
+                                <code style="color: #dbeafe; background: rgba(147, 51, 234, 0.1); padding: 8px 16px; border-radius: 8px;">kaynikko88@gmail.com</code><br>
+                                <small>• Full collaboration & custom development</small>
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 30px;">
+                            <p style="color: #60a5fa; font-size: 1.2em; margin-bottom: 10px;">
+                                Choose your support level:
+                            </p>
+                            <p style="color: #dbeafe; font-size: 1.1em; margin-top: 10px;">
+                                Your contribution powers Terry's evolution and helps create amazing AI features for everyone!
+                            </p>
+                        </div>
+                        
+                        <button class="control-btn donate-btn" style="width: 100%; margin-top: 30px;" onclick="confirmDonation()">
+                            🚀 Support Terry Development!
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(donateModal);
+            }
+            
+            donateModal.style.display = 'block';
+        }
+
+        function closeDonate() {
+            const donateModal = document.getElementById('donateModal');
+            if (donateModal) {
+                donateModal.style.display = 'none';
+            }
+        }
+
+        function confirmDonation() {
+            showNotification('Thank you for supporting Terry! 🚀', 'success');
+            closeDonate();
+        }
     </script>
 </body>
 </html>
