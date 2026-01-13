@@ -379,6 +379,54 @@
             z-index: 1000;
         }
 
+        .custom-device-form {
+            margin-bottom: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #60a5fa;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #60a5fa;
+            background: rgba(96, 165, 250, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
         .notification.show {
             transform: translateX(0);
         }
@@ -450,6 +498,60 @@
             </div>
 
             <div class="panel">
+                <h2>🌳 Custom Device Tree</h2>
+                <div class="custom-device-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="deviceCodename">Device Codename</label>
+                            <input type="text" id="deviceCodename" placeholder="e.g., lavender" />
+                        </div>
+                        <div class="form-group">
+                            <label for="deviceBrand">Brand</label>
+                            <input type="text" id="deviceBrand" placeholder="e.g., Xiaomi" />
+                        </div>
+                        <div class="form-group">
+                            <label for="deviceModel">Model</label>
+                            <input type="text" id="deviceModel" placeholder="e.g., Redmi Note 7" />
+                        </div>
+                        <div class="form-group">
+                            <label for="deviceArch">Architecture</label>
+                            <select id="deviceArch">
+                                <option value="arm64">ARM64</option>
+                                <option value="arm">ARM</option>
+                                <option value="x86_64">x86_64</option>
+                                <option value="x86">x86</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="devicePlatform">SoC Platform</label>
+                            <input type="text" id="devicePlatform" placeholder="e.g., sdm660, mt6768" />
+                        </div>
+                        <div class="form-group">
+                            <label for="androidVersion">Android Version</label>
+                            <select id="androidVersion">
+                                <option value="9">Android 9</option>
+                                <option value="10">Android 10</option>
+                                <option value="11">Android 11</option>
+                                <option value="12">Android 12</option>
+                                <option value="13">Android 13</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="treeUrl">Device Tree URL</label>
+                            <input type="url" id="treeUrl" placeholder="https://github.com/user/device_xiaomi_lavender.git" />
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="kernelUrl">Kernel URL (Optional)</label>
+                            <input type="url" id="kernelUrl" placeholder="https://github.com/user/kernel_xiaomi_lavender.git" />
+                        </div>
+                    </div>
+                    <button class="build-button" onclick="addCustomDevice()">
+                        🌳 Add Custom Device
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel">
                 <h2>⚙️ Build Configuration</h2>
                 <div class="build-options">
                     <div class="option-group">
@@ -497,6 +599,10 @@
 
                 <button class="build-button" onclick="setupEnvironment()">
                     🔧 Setup Build Environment
+                </button>
+
+                <button class="build-button" onclick="setupRoomservice()">
+                    📄 Setup Roomservice XML
                 </button>
             </div>
 
@@ -736,6 +842,93 @@
             addLogEntry('Terry Recovery Builder GUI initialized', 'info');
             addLogEntry(`${Object.keys(devices).length} devices loaded into database`, 'info');
         });
+
+        // Add custom device functionality
+        function addCustomDevice() {
+            const codename = document.getElementById('deviceCodename').value.trim();
+            const brand = document.getElementById('deviceBrand').value.trim();
+            const model = document.getElementById('deviceModel').value.trim();
+            const arch = document.getElementById('deviceArch').value;
+            const platform = document.getElementById('devicePlatform').value.trim();
+            const androidVersion = document.getElementById('androidVersion').value;
+            const treeUrl = document.getElementById('treeUrl').value.trim();
+            const kernelUrl = document.getElementById('kernelUrl').value.trim();
+
+            if (!codename || !brand || !model || !platform || !treeUrl) {
+                showNotification('Please fill in all required fields', 'error');
+                return;
+            }
+
+            // Add to device list
+            const newDevice = {
+                [codename]: {
+                    brand: brand,
+                    model: model,
+                    arch: arch,
+                    platform: platform
+                }
+            };
+            
+            // Update devices object
+            Object.assign(devices, newDevice);
+
+            // Add device card to grid
+            const deviceGrid = document.getElementById('deviceGrid');
+            const deviceCard = document.createElement('div');
+            deviceCard.className = 'device-card selected';
+            deviceCard.dataset.device = codename;
+            deviceCard.onclick = () => selectDevice(codename);
+            deviceCard.innerHTML = `
+                <div class="device-name">${codename} 🌳</div>
+                <div class="device-info">${brand} ${model}</div>
+                <div class="device-info">${arch} • ${platform}</div>
+            `;
+            deviceGrid.appendChild(deviceCard);
+
+            // Select the new device
+            selectDevice(codename);
+
+            // Clear form
+            document.getElementById('deviceCodename').value = '';
+            document.getElementById('deviceBrand').value = '';
+            document.getElementById('deviceModel').value = '';
+            document.getElementById('devicePlatform').value = '';
+            document.getElementById('treeUrl').value = '';
+            document.getElementById('kernelUrl').value = '';
+
+            showNotification(`Custom device ${codename} added successfully!`, 'success');
+            addLogEntry(`Custom device added: ${codename} (${brand} ${model})`, 'info');
+        }
+
+        // Setup roomservice.xml functionality
+        function setupRoomservice() {
+            if (!selectedDevice) {
+                showNotification('Please select a device first', 'error');
+                return;
+            }
+
+            const recoveryType = document.querySelector('input[name="recoveryType"]:checked').value;
+            
+            addLogEntry(`Setting up roomservice.xml for ${selectedDevice}...`, 'info');
+            updateProgress(25, 'Generating roomservice.xml...');
+
+            // Simulate roomservice generation
+            setTimeout(() => {
+                updateProgress(50, 'Configuring dependencies...');
+                setTimeout(() => {
+                    updateProgress(75, 'Creating manifest...');
+                    setTimeout(() => {
+                        updateProgress(100, 'Roomservice.xml created successfully!');
+                        addLogEntry(`Roomservice.xml created for ${selectedDevice} (${recoveryType})`, 'success');
+                        showNotification(`Roomservice.xml created for ${selectedDevice}!`, 'success');
+                        
+                        setTimeout(() => {
+                            updateProgress(0, 'Ready to build');
+                        }, 3000);
+                    }, 1000);
+                }, 1000);
+            }, 1000);
+        }
 
         // Store build stats (simulated)
         window.addEventListener('beforeunload', function() {

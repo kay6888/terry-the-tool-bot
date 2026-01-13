@@ -86,6 +86,9 @@ class RecoveryBuilder:
         # Initialize device database
         self.device_database = self.load_device_database()
         
+        # Custom device trees
+        self.custom_devices = self.load_custom_devices()
+        
         # Build tracking
         self.current_builds = {}
         self.build_history = []
@@ -98,12 +101,15 @@ class RecoveryBuilder:
             "sources/twrp",
             "sources/orange_fox", 
             "sources/device_trees",
+            "sources/custom_trees",
             "builds/twrp",
             "builds/orange_fox",
+            "builds/custom",
             "tools",
             "logs",
             "cache",
-            "artifacts"
+            "artifacts",
+            "roomservice"
         ]
         
         for dir_path in dirs:
@@ -157,6 +163,26 @@ class RecoveryBuilder:
         device_db_file = self.workspace_dir / "device_database.json"
         data = {k: vars(v) for k, v in devices.items()}
         with open(device_db_file, 'w') as f:
+            json.dump(data, f, indent=2)
+    
+    def load_custom_devices(self) -> Dict[str, DeviceInfo]:
+        """Load custom device trees"""
+        custom_devices_file = self.workspace_dir / "custom_devices.json"
+        if custom_devices_file.exists():
+            try:
+                with open(custom_devices_file, 'r') as f:
+                    data = json.load(f)
+                    return {k: DeviceInfo(**v) for k, v in data.items()}
+            except Exception as e:
+                logger.warning(f"Failed to load custom devices: {e}")
+        
+        return {}
+    
+    def save_custom_devices(self, devices: Dict[str, DeviceInfo]) -> None:
+        """Save custom device database"""
+        custom_devices_file = self.workspace_dir / "custom_devices.json"
+        data = {k: vars(v) for k, v in devices.items()}
+        with open(custom_devices_file, 'w') as f:
             json.dump(data, f, indent=2)
     
     def setup_build_environment(self) -> bool:
@@ -627,8 +653,188 @@ echo "Android build environment configured"
         return sha256_hash.hexdigest()
     
     def get_supported_devices(self) -> List[str]:
-        """Get list of supported devices"""
-        return list(self.device_database.keys())
+        """Get list of supported devices including custom devices"""
+        all_devices = list(self.device_database.keys())
+        custom_devices = list(self.custom_devices.keys())
+        return all_devices + custom_devices
+    
+    def add_custom_device_tree(self, device_info: DeviceInfo, tree_url: str, kernel_url: str = None) -> bool:
+        """Add a custom device tree to the database"""
+        try:
+            device_codename = device_info.codename
+            
+            # Clone custom device tree
+            custom_tree_dir = self.workspace_dir / "sources" / "custom_trees" / f"device_{device_codename}"
+            
+            if custom_tree_dir.exists():
+                logger.info(f"Custom tree for {device_codename} exists, updating...")
+                result = subprocess.run(
+                    ["git", "pull"],
+                    cwd=custom_tree_dir,
+                    capture_output=True,
+                    text=True
+                )
+            else:
+                logger.info(f"Cloning custom tree for {device_codename}...")
+                result = subprocess.run([
+                    "git", "clone", tree_url, str(custom_tree_dir)
+                ], capture_output=True, text=True)
+            
+            if result.returncode != 0:
+                logger.error(f"Failed to clone custom tree: {result.stderr}")
+                return False
+            
+            # Clone kernel if provided
+            if kernel_url:
+                kernel_dir = custom_tree_dir / "kernel"
+                if kernel_dir.exists():
+                    logger.info(f"Kernel for {device_codename} exists, updating...")
+                    subprocess.run(["git", "pull"], cwd=kernel_dir, capture_output=True)
+                else:
+                    logger.info(f"Cloning kernel for {device_codename}...")
+                    subprocess.run(["git", "clone", kernel_url, str(kernel_dir)], capture_output=True)
+            
+            # Add to custom devices database
+            self.custom_devices[device_codename] = device_info
+            self.save_custom_devices(self.custom_devices)
+            
+            logger.info(f"Custom device {device_codename} added successfully")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to add custom device tree: {e}")
+            return False
+    
+    def setup_roomservice_xml(self, device_codename: str, recovery_type: RecoveryType) -> bool:
+        """Setup roomservice.xml for device recovery building"""
+        try:
+            roomservice_dir = self.workspace_dir / "roomservice"
+            roomservice_file = roomservice_dir / f"roomservice_{device_codename}.xml"
+            
+            # Determine source directory
+            if device_codename in self.custom_devices:
+                source_dir = self.workspace_dir / "sources" / "custom_trees" / f"device_{device_codename}"
+            else:
+                source_dir = self.workspace_dir / "sources" / "device_trees" / f"device_{device_codename}"
+            
+            if not source_dir.exists():
+                logger.error(f"Device tree not found: {source_dir}")
+                return False
+            
+            # Create roomservice.xml content
+            roomservice_content = self.generate_roomservice_xml(device_codename, recovery_type, source_dir)
+            
+            with open(roomservice_file, 'w') as f:
+                f.write(roomservice_content)
+            
+            logger.info(f"Roomservice XML created for {device_codename}: {roomservice_file}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to setup roomservice.xml: {e}")
+            return False
+    
+    def generate_roomservice_xml(self, device_codename: str, recovery_type: RecoveryType, source_dir: Path) -> str:
+        """Generate roomservice.xml content"""
+        
+        # Get device info
+        if device_codename in self.custom_devices:
+            device_info = self.custom_devices[device_codename]
+        else:
+            device_info = self.device_database.get(device_codename)
+        
+        if not device_info:
+            return "<?xml version=\"1.0\" encoding=\"UTF-8\"?><manifest></manifest>"
+        
+        # Determine repositories based on recovery type
+        if recovery_type == RecoveryType.TWRP:
+            manifest_repo = "minimal-manifest-twrp/platform_manifest"
+            manifest_branch = f"twrp-3.7.0_12"
+        else:  # Orange Fox
+            manifest_repo = "OrangeFox/manifest"
+            manifest_branch = "fox_12.1"
+        
+        # Find device and kernel repositories from source directory
+        device_repo = ""
+        kernel_repo = ""
+        
+        # Look for git remotes in device tree
+        git_config_file = source_dir / ".git" / "config"
+        if git_config_file.exists():
+            try:
+                with open(git_config_file, 'r') as f:
+                    git_config = f.read()
+                    for line in git_config.split('\n'):
+                        if 'url = ' in line and 'device_' in line:
+                            device_repo = line.split('url = ')[1].strip()
+                            break
+            except:
+                pass
+        
+        # Look for kernel repo
+        kernel_dir = source_dir / "kernel"
+        kernel_config_file = kernel_dir / ".git" / "config"
+        if kernel_config_file.exists():
+            try:
+                with open(kernel_config_file, 'r') as f:
+                    git_config = f.read()
+                    for line in git_config.split('\n'):
+                        if 'url = ' in line and 'kernel' in line:
+                            kernel_repo = line.split('url = ')[1].strip()
+                            break
+            except:
+                pass
+        
+        # Generate XML content
+        xml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+    
+    <!-- Recovery Manifest for {device_info.brand} {device_info.model} ({device_codename}) -->
+    <!-- Generated by Terry Recovery Builder -->
+    
+    <!-- Main Recovery Manifest -->
+    <project name="{manifest_repo}" path="" remote="github" revision="{manifest_branch}" />
+    
+    <!-- Device Tree -->
+    <project name="device_{device_codename}" path="device/{device_info.brand}/{device_codename}" remote="github" revision="main" />
+    
+    <!-- Vendor Tree (if available) -->
+    <project name="vendor_{device_codename}" path="vendor/{device_info.brand}/{device_codename}" remote="github" revision="main" />
+    
+    <!-- Kernel -->
+    <project name="kernel_{device_codename}" path="kernel/{device_info.brand}/{device_codename}" remote="github" revision="main" />
+    
+    <!-- Common Trees for {device_info.arch} Architecture -->
+    <project name="android_hardware_qcom_display" path="hardware/qcom/display" remote="github" revision="lineage-19.1" />
+    <project name="android_hardware_qcom_media" path="hardware/qcom/media" remote="github" revision="lineage-19.1" />
+    <project name="android_device_qcom_common" path="device/qcom/common" remote="github" revision="lineage-19.1" />
+    
+    <!-- Build Tools -->
+    <project name="android_build_soong" path="build/soong" remote="github" revision="lineage-19.1" />
+    <project name="android_build_make" path="build/make" remote="github" revision="lineage-19.1" />
+    
+    <!-- Platform Dependencies -->
+    <project name="platform_frameworks_av" path="frameworks/av" remote="github" revision="lineage-19.1" />
+    <project name="platform_system_core" path="system/core" remote="github" revision="lineage-19.1" />
+    <project name="platform_hardware_libhardware" path="hardware/libhardware" remote="github" revision="lineage-19.1" />
+    
+    <!-- Additional Device-Specific Dependencies -->
+    <remove-project name="platform_packages_apps_Camera2" />
+    <remove-project name="platform_packages_apps_Gallery2" />
+    
+    <!-- Custom Recovery Patches -->
+    <project name="recovery_patches_{device_codename}" path="device/{device_info.brand}/{device_codename}/recovery" remote="github" revision="main" />
+    
+</manifest>"""
+        
+        return xml_content
+    
+    def get_roomservice_file(self, device_codename: str) -> Optional[Path]:
+        """Get roomservice.xml file path for device"""
+        roomservice_file = self.workspace_dir / "roomservice" / f"roomservice_{device_codename}.xml"
+        if roomservice_file.exists():
+            return roomservice_file
+        return None
     
     def get_build_history(self) -> List[BuildArtifact]:
         """Get build history"""

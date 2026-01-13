@@ -188,14 +188,15 @@ class TerryToolBot:
         try:
             from .tools.recovery_builder import BuildConfig, RecoveryType, DeviceInfo
             
-            # Get device info
-            if device_codename not in self.recovery_builder.device_database:
+            # Check in both default and custom devices
+            all_devices = {**self.recovery_builder.device_database, **self.recovery_builder.custom_devices}
+            if device_codename not in all_devices:
                 return {
                     'success': False,
-                    'error': f'Device {device_codename} not supported'
+                    'error': f'Device {device_codename} not supported. Use "list supported devices" to see available devices.'
                 }
             
-            device_info = self.recovery_builder.device_database[device_codename]
+            device_info = all_devices[device_codename]
             
             # Create build config
             build_config = BuildConfig(
@@ -233,6 +234,85 @@ class TerryToolBot:
         if self.recovery_builder:
             return self.recovery_builder.get_supported_devices()
         return []
+    
+    def add_custom_device_tree(self, device_codename: str, brand: str, model: str, arch: str, 
+                             platform: str, android_version: str, tree_url: str, 
+                             kernel_url: str = None) -> Dict[str, Any]:
+        """Add a custom device tree for recovery building"""
+        if not self.recovery_builder:
+            return {
+                'success': False,
+                'error': 'Recovery Builder not available'
+            }
+        
+        try:
+            from .tools.recovery_builder import DeviceInfo
+            
+            # Create device info
+            device_info = DeviceInfo(
+                codename=device_codename,
+                brand=brand,
+                model=model,
+                arch=arch,
+                platform=platform,
+                android_version=android_version
+            )
+            
+            # Add custom device tree
+            success = self.recovery_builder.add_custom_device_tree(
+                device_info, tree_url, kernel_url
+            )
+            
+            if success:
+                return {
+                    'success': True,
+                    'message': f'Custom device {device_codename} ({brand} {model}) added successfully'
+                }
+            else:
+                return {
+                    'success': False,
+                    'error': f'Failed to add custom device tree for {device_codename}'
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Error adding custom device tree: {str(e)}'
+            }
+    
+    def setup_roomservice_xml(self, device_codename: str, recovery_type: str = "twrp") -> Dict[str, Any]:
+        """Setup roomservice.xml for device recovery building"""
+        if not self.recovery_builder:
+            return {
+                'success': False,
+                'error': 'Recovery Builder not available'
+            }
+        
+        try:
+            from .tools.recovery_builder import RecoveryType
+            
+            recovery_type_enum = RecoveryType(recovery_type.lower())
+            success = self.recovery_builder.setup_roomservice_xml(device_codename, recovery_type_enum)
+            
+            roomservice_file = self.recovery_builder.get_roomservice_file(device_codename)
+            
+            if success and roomservice_file:
+                return {
+                    'success': True,
+                    'message': f'Roomservice XML created for {device_codename}',
+                    'file_path': str(roomservice_file)
+                }
+            else:
+                return {
+                    'success': False,
+                    'error': f'Failed to setup roomservice XML for {device_codename}'
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Error setting up roomservice XML: {str(e)}'
+            }
     
     def setup_recovery_build_environment(self) -> Dict[str, Any]:
         """Setup recovery build environment"""
@@ -403,7 +483,7 @@ class TerryToolBot:
         user_input_lower = user_input.lower()
         
         # Recovery building queries
-        if any(keyword in user_input_lower for keyword in ['recovery', 'twrp', 'orange fox', 'build recovery']):
+        if any(keyword in user_input_lower for keyword in ['recovery', 'twrp', 'orange fox', 'build recovery', 'custom device', 'roomservice']):
             return self.process_recovery_queries(user_input)
         
         # Android development queries
@@ -441,6 +521,38 @@ class TerryToolBot:
                 return f"📱 Supported devices ({len(devices)} total):\\n{device_list}\\n... and {len(devices) - 10} more devices!"
             else:
                 return "❌ No devices available. Recovery Builder might not be initialized."
+        
+        # Add custom device tree
+        elif 'add custom device' in user_input_lower or 'add device tree' in user_input_lower:
+            return """🌳 Add Custom Device Tree:\\n\\nFormat: 'add custom device <codename> <brand> <model> <arch> <platform> <android_version> <tree_url> [kernel_url]'\\n\\nExample: 'add custom device lavender Xiaomi Redmi Note 7 arm64 sdm660 9 https://github.com/device/xiaomi_lavender https://github.com/kernel/xiaomi_lavender'\\n\\nRequired info:\\n• codename: Device codename (e.g., lavender)\\n• brand: Manufacturer (e.g., Xiaomi)\\n• model: Device model (e.g., Redmi Note 7)\\n• arch: Architecture (arm64, arm, etc.)\\n• platform: SoC platform (sdm660, mt6768, etc.)\\n• android_version: Android version (9, 10, 11, etc.)\\n• tree_url: Device tree repository URL\\n• kernel_url: (optional) Kernel repository URL"""
+        
+        # Setup roomservice.xml
+        elif any(keyword in user_input_lower for keyword in ['roomservice', 'setup roomservice']):
+            # Extract device name
+            words = user_input_lower.split()
+            device_name = None
+            recovery_type = 'twrp'
+            
+            # Find device name
+            for i, word in enumerate(words):
+                if word in ['roomservice', 'setup'] and i + 1 < len(words):
+                    potential_device = words[i + 1]
+                    if potential_device not in ['xml', 'for']:
+                        device_name = potential_device
+                        break
+            
+            # Find recovery type
+            if 'orange' in user_input_lower and 'fox' in user_input_lower:
+                recovery_type = 'orange_fox'
+            
+            if device_name:
+                result = self.setup_roomservice_xml(device_name, recovery_type)
+                if result['success']:
+                    return f"✅ {result['message']}\\n📁 File: {result['file_path']}"
+                else:
+                    return f"❌ Roomservice setup failed: {result['error']}"
+            else:
+                return "Please specify a device name. Example: 'setup roomservice beryllium' or 'setup roomservice orange fox beryllium'"
         
         # Build recovery for specific device
         elif 'build' in user_input_lower and 'twrp' in user_input_lower:
@@ -490,7 +602,7 @@ class TerryToolBot:
                 return "❌ Recovery Builder is not available or initialized."
         
         # Default recovery help
-        return "🔧 Recovery Building Commands:\\n• 'setup recovery environment' - Setup build tools\\n• 'list supported devices' - Show available devices\\n• 'build twrp [device]' - Build TWRP recovery\\n• 'build orange fox [device]' - Build Orange Fox recovery\\n• 'recovery status' - Show current status"
+        return """🔧 Recovery Building Commands:\\n• 'setup recovery environment' - Setup build tools\\n• 'list supported devices' - Show available devices\\n• 'add custom device' - Show custom device format\\n• 'setup roomservice [device]' - Generate roomservice.xml\\n• 'build twrp [device]' - Build TWRP recovery\\n• 'build orange fox [device]' - Build Orange Fox recovery\\n• 'recovery status' - Show current status\\n\\n🌳 Custom Device Example: 'add custom device lavender Xiaomi Redmi Note 7 arm64 sdm660 9 https://github.com/device/xiaomi_lavender https://github.com/kernel/xiaomi_lavender'"""
     
     def get_capabilities_help(self) -> str:
         """Get comprehensive help about Terry's capabilities"""
